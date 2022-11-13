@@ -2,40 +2,49 @@ package main
 
 import (
 	"bytes"
-	"context"
 	"fmt"
 	"io"
 	"os"
-	"time"
 
-	"github.com/go-redis/redis/v8"
+	"github.com/dgraph-io/ristretto"
 	log "github.com/sirupsen/logrus"
 )
 
-var redisCli *redis.Client
+var cache *ristretto.Cache
 var redisNamespace string
 
-func InitStore(namespace string) *redis.Client {
-	redisNamespace = namespace
-	redisCli = redis.NewClient(&redis.Options{
-		ReadTimeout:  60 * time.Second,
-		WriteTimeout: 60 * time.Second,
-		Addr:         "localhost:8910",
-		Password:     "",
-		DB:           0,
+func fileSize(path string) (int64, error) {
+	fi, err := os.Stat(path)
+	if err != nil {
+		log.Errorf("Could not stat file '%s': %s", path, err)
+		return 0, err
+	}
+	return fi.Size(), nil
+}
+
+func InitStore(namespace string) *ristretto.Cache {
+	var err error
+	cache, err = ristretto.NewCache(&ristretto.Config{
+		NumCounters: 1e7,                    // number of keys to track frequency of (10M).
+		MaxCost:     1024 * 1024 * 1024 * 1, //  maximum cost of cache (1GB).
+		BufferItems: 64,                     // number of keys per Get buffer.
+		OnEvict:     func(item *ristretto.Item) { fmt.Printf("Evicted %d", item.Key) },
 	})
-	return redisCli
+	if err != nil {
+		log.Fatal(err)
+	}
+	return cache
 }
 
 func InsertCacheFile(hash string, path string) {
 	log.Debugf("Creating cache entry for '%s'", hash)
 
-	key := fmt.Sprintf("%s:f:%s", redisNamespace, hash)
 	f, err := os.Open(path)
 	if err != nil {
 		log.Errorf("Could not open file for caching '%s': %s", hash, err)
 		return
 	}
+	defer f.Close()
 
 	contents, err := io.ReadAll(f)
 	if err != nil {
@@ -43,9 +52,14 @@ func InsertCacheFile(hash string, path string) {
 		return
 	}
 
-	err = redisCli.Set(context.Background(), key, contents, 0).Err()
+	size, err := fileSize(path)
 	if err != nil {
-		log.Fatal(err)
+		log.Error("Cannot determine file size, not updating cache")
+		return
+	}
+	ok := cache.Set(hash, contents, size)
+	if !ok {
+		log.Error("Cache not updated")
 	}
 
 	log.Debugf("Finished creating cache entry for '%s'", hash)
@@ -54,10 +68,11 @@ func InsertCacheFile(hash string, path string) {
 func FileFromCache(hash string) (io.ReadSeeker, bool) {
 	log.Debugf("Searching cache entry for '%s'", hash)
 
-	key := fmt.Sprintf("%s:f:%s", redisNamespace, hash)
-	c, err := redisCli.Get(context.Background(), key).Bytes()
-	if err != nil {
+	value, found := cache.Get(hash)
+	if !found {
+		log.Debugf("Cache entry not found for '%s'", hash)
 		return nil, false
 	}
-	return bytes.NewReader(c), true
+
+	return bytes.NewReader(value.([]byte)), true
 }
