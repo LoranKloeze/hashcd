@@ -1,7 +1,7 @@
 package main
 
 import (
-	"crypto/md5"
+	"crypto/sha256"
 	"encoding/hex"
 	"encoding/json"
 	"fmt"
@@ -28,11 +28,11 @@ func fileExists(path string) bool {
 	return err == nil
 }
 
-func genMD5Hash(f io.Reader) string {
-	hash := md5.New()
+func genHash(f io.Reader) string {
+	hash := sha256.New()
 	_, err := io.Copy(hash, f)
 	if err != nil {
-		log.Fatalf("Could not calculate MD5 hash %s\n", err)
+		log.Fatalf("Could not calculate SHA256 hash %s\n", err)
 	}
 	return hex.EncodeToString(hash.Sum(nil))
 }
@@ -82,7 +82,7 @@ func Upload(w http.ResponseWriter, r *http.Request, _ httprouter.Params) {
 	}
 	defer f.Close()
 
-	hash := genMD5Hash(f)
+	hash := genHash(f)
 	dirs, err := initDirectories(hash)
 	if err != nil {
 		log.Fatalf("[%s] Could not create directory storage tree %s\n", id, err)
