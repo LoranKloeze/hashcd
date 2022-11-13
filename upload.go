@@ -16,12 +16,16 @@ import (
 )
 
 type okResponse struct {
-	Hash       string `json:"hash"`
-	WasCreated bool   `json:"was_created"`
+	Hash string `json:"hash"`
 }
 
 type errorResponse struct {
 	Error string `json:"error"`
+}
+
+func fileExists(path string) bool {
+	_, err := os.Stat(path)
+	return err == nil
 }
 
 func genMD5Hash(f io.Reader) string {
@@ -57,8 +61,8 @@ func Upload(w http.ResponseWriter, r *http.Request, _ httprouter.Params) {
 	err := r.ParseMultipartForm(maxMem)
 	if err != nil {
 		log.Printf("[%s] Could not parse form: %s\n", id, err)
-		json.NewEncoder(w).Encode(errorResponse{"Could not parse form data"})
 		w.WriteHeader(http.StatusUnprocessableEntity)
+		json.NewEncoder(w).Encode(errorResponse{"Could not parse form data"})
 		return
 	}
 
@@ -85,8 +89,17 @@ func Upload(w http.ResponseWriter, r *http.Request, _ httprouter.Params) {
 		w.WriteHeader(http.StatusInternalServerError)
 		return
 	}
-	f.Seek(0, 0)
+
 	path := fmt.Sprintf("%s/%s", dirs, hash)
+	if fileExists(path) {
+		w.Header().Set("Content-Type", "application/json")
+		w.WriteHeader(http.StatusOK)
+		json.NewEncoder(w).Encode(okResponse{hash})
+		return
+	}
+
+	f.Seek(0, 0)
+
 	f1, err := os.Create(path)
 	if err != nil {
 		log.Fatalf("[%s] Could not create file: %s\n", id, err)
@@ -107,6 +120,6 @@ func Upload(w http.ResponseWriter, r *http.Request, _ httprouter.Params) {
 
 	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(http.StatusCreated)
-	res := okResponse{hash, true}
+	res := okResponse{hash}
 	json.NewEncoder(w).Encode(res)
 }
