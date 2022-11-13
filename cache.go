@@ -11,7 +11,6 @@ import (
 )
 
 var cache *ristretto.Cache
-var redisNamespace string
 
 func fileSize(path string) (int64, error) {
 	fi, err := os.Stat(path)
