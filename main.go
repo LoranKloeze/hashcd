@@ -1,26 +1,43 @@
 package main
 
 import (
+	"crypto/md5"
 	"encoding/hex"
+	"fmt"
 	"io"
-	"log"
-	"math/rand"
 	"net/http"
 	"os"
-	"time"
+	"regexp"
+	"strings"
+
+	log "github.com/sirupsen/logrus"
 
 	"github.com/julienschmidt/httprouter"
 )
 
-func RandStringBytesMaskImprSrc(n int) string {
-	src := rand.New(rand.NewSource(time.Now().UnixNano()))
-	b := make([]byte, (n+1)/2) // can be simplified to n/2 if n is always even
-
-	if _, err := src.Read(b); err != nil {
-		panic(err)
+func GenMD5Hash(f io.Reader) string {
+	hash := md5.New()
+	_, err := io.Copy(hash, f)
+	if err != nil {
+		log.Fatalf("Could not calculate MD5 hash %s\n", err)
 	}
+	return hex.EncodeToString(hash.Sum(nil))
+}
 
-	return hex.EncodeToString(b)[:n]
+func InitDirectories(hash string) (string, error) {
+	t := hash[0 : len(hash)-2]
+
+	re := regexp.MustCompile(`..`)
+	p := "/home/loran/git/lab/mycdn/storage/"
+	r := re.FindAllString(t, -1)
+	p += strings.Join(r, "/")
+	err := os.MkdirAll(p, 0755)
+	if err != nil {
+		log.Errorf("Could not create directory storage tree: %s", err)
+		return "", err
+	}
+	log.Debugf("Initialized directory storage tree '%s'", p)
+	return p, nil
 }
 
 func Upload(w http.ResponseWriter, r *http.Request, _ httprouter.Params) {
@@ -40,21 +57,34 @@ func Upload(w http.ResponseWriter, r *http.Request, _ httprouter.Params) {
 	}
 	f, err := field[0].Open()
 	if err != nil {
-		log.Fatalf("Could not open file from form: %s\n", err)
+		log.Error("Could not open file from form: %s\n", err)
+		http.Error(w, "Could not open file from form", http.StatusUnprocessableEntity)
+		return
 	}
 	defer f.Close()
 
-	f1, err := os.Create("/home/loran/git/lab/mycdn/storage/myfile")
+	hash := GenMD5Hash(f)
+	path, err := InitDirectories(hash)
+	if err != nil {
+		log.Fatalf("Could not create directory storage tree %s\n", err)
+		w.WriteHeader(http.StatusInternalServerError)
+		return
+	}
+	f.Seek(0, 0)
+	f1, err := os.Create(fmt.Sprintf("%s/%s", path, hash))
 	if err != nil {
 		log.Fatalf("Could not create file: %s\n", err)
+		w.WriteHeader(http.StatusInternalServerError)
+		return
 	}
 	defer f1.Close()
 
 	io.Copy(f1, f)
-
+	w.WriteHeader(http.StatusCreated)
 }
 
 func main() {
+	log.SetLevel(log.DebugLevel)
 	router := httprouter.New()
 	router.POST("/", Upload)
 	// router.GET("/hello/:name", Hello)
