@@ -15,6 +15,9 @@ func main() {
 	})
 	log.SetLevel(log.DebugLevel)
 
+	store := InitStore("finalcd")
+	defer store.Close()
+
 	router := httprouter.New()
 	router.POST("/", Upload)
 	router.GET("/:hash", Download)

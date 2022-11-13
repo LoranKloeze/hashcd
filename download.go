@@ -5,6 +5,7 @@ import (
 	"path/filepath"
 	"regexp"
 	"strings"
+	"time"
 
 	"github.com/julienschmidt/httprouter"
 	log "github.com/sirupsen/logrus"
@@ -25,10 +26,19 @@ func Download(w http.ResponseWriter, r *http.Request, p httprouter.Params) {
 	hash := p.ByName("hash")
 	log.Infof("[%s] Sending file '%s'", id, hash)
 
-	path := filepath.Join(directoryTree(hash), hash)
+	reader, ok := FileFromCache(hash)
+	if ok {
+		log.Infof("[%s] Serving from cache", id)
+		http.ServeContent(w, r, hash, time.Time{}, reader)
+	} else {
+		log.Infof("[%s] Serving from disk", id)
+		path := filepath.Join(directoryTree(hash), hash)
 
-	// ServeFile sanitizes the path to prevent traversal attacks
-	http.ServeFile(w, r, path)
+		// ServeFile sanitizes the path to prevent traversal attacks
+		http.ServeFile(w, r, path)
+
+		InsertCacheFile(hash, path)
+	}
 
 	log.Infof("[%s] Sending finished", id)
 }
