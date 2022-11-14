@@ -2,14 +2,21 @@ package main
 
 import (
 	"net/http"
+	"os"
 
-	log "github.com/sirupsen/logrus"
+	_ "net/http/pprof"
 
 	"github.com/julienschmidt/httprouter"
+	log "github.com/sirupsen/logrus"
 	"github.com/urfave/negroni"
 )
 
 func main() {
+	// defer profile.Start(profile.MemProfile).Stop()
+	// go func(c chan int) {
+	// 	http.ListenAndServe(":8081", nil)
+	// }()
+
 	log.SetFormatter(&log.TextFormatter{
 		FullTimestamp: true,
 	})
@@ -29,6 +36,7 @@ func main() {
 	n.Use(negroni.HandlerFunc(logMiddleware))
 	n.UseHandler(router)
 
+	log.Printf("PID: %d\n", os.Getpid())
 	log.Println("Listening on port 8080")
 	log.Fatal(http.ListenAndServe(":8080", n))
 }

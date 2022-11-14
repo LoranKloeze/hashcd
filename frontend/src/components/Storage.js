@@ -1,9 +1,24 @@
 import Card from 'react-bootstrap/Card';
+import Spinner from 'react-bootstrap/Spinner';
 import ListGroup from 'react-bootstrap/ListGroup';
 import axios from 'axios';
 import { useState } from 'react';
 
 import { Button } from 'react-bootstrap';
+
+
+
+const Waiting = () => {
+  return (
+    <div className='text-center'>
+      <Spinner animation="border" role="status">
+        <span className="visually-hidden">Loading...</span>
+      </Spinner>
+    </div>
+
+  );
+
+}
 
 function humanFileSize(size) {
   var i = size === 0 ? 0 : Math.floor(Math.log(size) / Math.log(1024));
@@ -12,10 +27,13 @@ function humanFileSize(size) {
 
 function Storage({ hashes = [] }) {
   const [headers, setHeaders] = useState([])
+  const [loading, setLoading] = useState(false)
 
   function retrieveFile(hash) {
-    axios.get(`http://localhost:8080/d/${hash}`).then(e => {
+    setLoading(true)
+    axios.get(`http://localhost:8080/d/${hash}?t=${new Date().getTime()}`).then(e => {
       setHeaders(e.headers)
+      setLoading(false)
     })
   }
 
@@ -33,7 +51,7 @@ function Storage({ hashes = [] }) {
     } else {
       return <div key={k}>{k}: {headers[k]}</div>
     }
-    
+
   })
 
   return (
@@ -41,8 +59,7 @@ function Storage({ hashes = [] }) {
       <Card>
         <Card.Body>
           <Card.Title>Hashes in storage</Card.Title>
-          <pre>{headerItems}</pre>
-
+          { loading ? <Waiting /> : <pre>{headerItems}</pre> }
         </Card.Body>
         {listItems.length > 0 &&
           <ListGroup className="list-group-flush">
