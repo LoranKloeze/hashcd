@@ -15,7 +15,7 @@ func directoryTree(hash string) string {
 	t := hash[0 : len(hash)-2]
 
 	re := regexp.MustCompile(`..`)
-	p := "/home/loran/git/lab/mycdn/storage/"
+	p := "/home/loran/git/lab/finalcd/storage/"
 	r := re.FindAllString(t, -1)
 	return p + strings.Join(r, "/")
 }
@@ -29,9 +29,11 @@ func Download(w http.ResponseWriter, r *http.Request, p httprouter.Params) {
 	reader, ok := FileFromCache(hash)
 	if ok {
 		log.Infof("[%s] Serving from cache", id)
+		w.Header().Set("Served-From", "cache")
 		http.ServeContent(w, r, hash, time.Time{}, reader)
 	} else {
 		log.Infof("[%s] Serving from disk", id)
+		w.Header().Set("Served-From", "disk")
 		path := filepath.Join(directoryTree(hash), hash)
 
 		// ServeFile sanitizes the path to prevent traversal attacks

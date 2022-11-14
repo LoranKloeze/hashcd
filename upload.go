@@ -41,7 +41,7 @@ func initDirectories(hash string) (string, error) {
 	t := hash[0 : len(hash)-2]
 
 	re := regexp.MustCompile(`..`)
-	p := "/home/loran/git/lab/mycdn/storage/"
+	p := "/home/loran/git/lab/finalcd/storage/"
 	r := re.FindAllString(t, -1)
 	p += strings.Join(r, "/")
 	err := os.MkdirAll(p, 0755)

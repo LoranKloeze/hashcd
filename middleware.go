@@ -25,6 +25,12 @@ func clientIp(r *http.Request) string {
 	return ip
 }
 
+func corsMiddleWare(rw http.ResponseWriter, r *http.Request, next http.HandlerFunc) {
+	rw.Header().Set("Access-Control-Allow-Origin", "*")
+	rw.Header().Set("Access-Control-Expose-Headers", "Served-From")
+	next(rw, r)
+}
+
 func requestIdMiddleware(rw http.ResponseWriter, r *http.Request, next http.HandlerFunc) {
 	ctx := context.WithValue(r.Context(), contextRequestIdKey, uuid.New())
 	r = r.WithContext(ctx)

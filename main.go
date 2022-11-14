@@ -20,10 +20,12 @@ func main() {
 
 	router := httprouter.New()
 	router.POST("/", Upload)
-	router.GET("/:hash", Download)
+	router.GET("/l", List)
+	router.GET("/d/:hash", Download)
 
 	n := negroni.New()
 	n.Use(negroni.HandlerFunc(requestIdMiddleware))
+	n.Use(negroni.HandlerFunc(corsMiddleWare))
 	n.Use(negroni.HandlerFunc(logMiddleware))
 	n.UseHandler(router)
 

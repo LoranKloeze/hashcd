@@ -12,15 +12,6 @@ import (
 
 var cache *ristretto.Cache
 
-func fileSize(path string) (int64, error) {
-	fi, err := os.Stat(path)
-	if err != nil {
-		log.Errorf("Could not stat file '%s': %s", path, err)
-		return 0, err
-	}
-	return fi.Size(), nil
-}
-
 func InitStore(namespace string) *ristretto.Cache {
 	var err error
 	cache, err = ristretto.NewCache(&ristretto.Config{
@@ -51,7 +42,7 @@ func InsertCacheFile(hash string, path string) {
 		return
 	}
 
-	size, err := fileSize(path)
+	size, err := FileSize(path)
 	if err != nil {
 		log.Error("Cannot determine file size, not updating cache")
 		return
