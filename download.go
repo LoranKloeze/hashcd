@@ -38,7 +38,6 @@ func Download(w http.ResponseWriter, r *http.Request, p httprouter.Params) {
 
 		// ServeFile sanitizes the path to prevent traversal attacks
 		http.ServeFile(w, r, path)
-
 		InsertCacheFile(hash, path)
 	}
 
