@@ -1,4 +1,4 @@
-package main
+package middleware
 
 import (
 	"context"
@@ -10,9 +10,9 @@ import (
 	"github.com/urfave/negroni"
 )
 
-type ContextKey string
+type contextKey string
 
-const contextRequestIdKey ContextKey = "requestId"
+const ContextRequestIdKey contextKey = "requestId"
 
 func clientIp(r *http.Request) string {
 	ip := r.Header.Get("X-Real-Ip")
@@ -25,21 +25,21 @@ func clientIp(r *http.Request) string {
 	return ip
 }
 
-func corsMiddleWare(rw http.ResponseWriter, r *http.Request, next http.HandlerFunc) {
+func Cors(rw http.ResponseWriter, r *http.Request, next http.HandlerFunc) {
 	rw.Header().Set("Access-Control-Allow-Origin", "*")
 	rw.Header().Set("Access-Control-Expose-Headers", "Served-From")
 	next(rw, r)
 }
 
-func requestIdMiddleware(rw http.ResponseWriter, r *http.Request, next http.HandlerFunc) {
-	ctx := context.WithValue(r.Context(), contextRequestIdKey, uuid.New())
+func RequestId(rw http.ResponseWriter, r *http.Request, next http.HandlerFunc) {
+	ctx := context.WithValue(r.Context(), ContextRequestIdKey, uuid.New())
 	r = r.WithContext(ctx)
 	next(rw, r)
 }
 
-func logMiddleware(rw http.ResponseWriter, r *http.Request, next http.HandlerFunc) {
+func Log(rw http.ResponseWriter, r *http.Request, next http.HandlerFunc) {
 	tStart := time.Now()
-	id := r.Context().Value(contextRequestIdKey)
+	id := r.Context().Value(ContextRequestIdKey)
 
 	log.Infof("[%s] Request start| %s | %s | %s", id, clientIp(r), r.Method, r.URL.Path)
 	lrw := negroni.NewResponseWriter(rw)

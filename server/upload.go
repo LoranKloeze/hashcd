@@ -1,4 +1,4 @@
-package main
+package server
 
 import (
 	"crypto/sha256"
@@ -12,6 +12,7 @@ import (
 	"strings"
 
 	"github.com/julienschmidt/httprouter"
+	"github.com/lorankloeze/finalcd/middleware"
 	log "github.com/sirupsen/logrus"
 )
 
@@ -23,38 +24,8 @@ type errorResponse struct {
 	Error string `json:"error"`
 }
 
-func fileExists(path string) bool {
-	_, err := os.Stat(path)
-	return err == nil
-}
-
-func genHash(f io.Reader) string {
-	hash := sha256.New()
-	_, err := io.Copy(hash, f)
-	if err != nil {
-		log.Fatalf("Could not calculate SHA256 hash %s\n", err)
-	}
-	return hex.EncodeToString(hash.Sum(nil))
-}
-
-func initDirectories(hash string) (string, error) {
-	t := hash[0 : len(hash)-2]
-
-	re := regexp.MustCompile(`..`)
-	p := "/home/loran/git/lab/finalcd/storage/"
-	r := re.FindAllString(t, -1)
-	p += strings.Join(r, "/")
-	err := os.MkdirAll(p, 0755)
-	if err != nil {
-		log.Errorf("Could not create directory storage tree: %s", err)
-		return "", err
-	}
-	log.Debugf("Initialized directory storage tree '%s'", p)
-	return p, nil
-}
-
 func Upload(w http.ResponseWriter, r *http.Request, _ httprouter.Params) {
-	id := r.Context().Value(contextRequestIdKey)
+	id := r.Context().Value(middleware.ContextRequestIdKey)
 	maxMem := int64(10 << 20) // 10MB
 
 	log.Infof("[%s] Receiving file", id)
@@ -122,4 +93,34 @@ func Upload(w http.ResponseWriter, r *http.Request, _ httprouter.Params) {
 	w.WriteHeader(http.StatusCreated)
 	res := okResponse{hash}
 	json.NewEncoder(w).Encode(res)
+}
+
+func fileExists(path string) bool {
+	_, err := os.Stat(path)
+	return err == nil
+}
+
+func genHash(f io.Reader) string {
+	hash := sha256.New()
+	_, err := io.Copy(hash, f)
+	if err != nil {
+		log.Fatalf("Could not calculate SHA256 hash %s\n", err)
+	}
+	return hex.EncodeToString(hash.Sum(nil))
+}
+
+func initDirectories(hash string) (string, error) {
+	t := hash[0 : len(hash)-2]
+
+	re := regexp.MustCompile(`..`)
+	p := "/home/loran/git/lab/finalcd/storage/"
+	r := re.FindAllString(t, -1)
+	p += strings.Join(r, "/")
+	err := os.MkdirAll(p, 0755)
+	if err != nil {
+		log.Errorf("Could not create directory storage tree: %s", err)
+		return "", err
+	}
+	log.Debugf("Initialized directory storage tree '%s'", p)
+	return p, nil
 }

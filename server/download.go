@@ -1,4 +1,4 @@
-package main
+package server
 
 import (
 	"net/http"
@@ -8,25 +8,18 @@ import (
 	"time"
 
 	"github.com/julienschmidt/httprouter"
+	"github.com/lorankloeze/finalcd/cache"
+	"github.com/lorankloeze/finalcd/middleware"
 	log "github.com/sirupsen/logrus"
 )
 
-func directoryTree(hash string) string {
-	t := hash[0 : len(hash)-2]
-
-	re := regexp.MustCompile(`..`)
-	p := "/home/loran/git/lab/finalcd/storage/"
-	r := re.FindAllString(t, -1)
-	return p + strings.Join(r, "/")
-}
-
 func Download(w http.ResponseWriter, r *http.Request, p httprouter.Params) {
-	id := r.Context().Value(contextRequestIdKey)
+	id := r.Context().Value(middleware.ContextRequestIdKey)
 
 	hash := p.ByName("hash")
 	log.Infof("[%s] Sending file '%s'", id, hash)
 
-	reader, ok := FileFromCache(hash)
+	reader, ok := cache.GetFile(hash)
 	if ok {
 		log.Infof("[%s] Serving from cache", id)
 		w.Header().Set("Served-From", "cache on server")
@@ -38,8 +31,17 @@ func Download(w http.ResponseWriter, r *http.Request, p httprouter.Params) {
 
 		// ServeFile sanitizes the path to prevent traversal attacks
 		http.ServeFile(w, r, path)
-		InsertCacheFile(hash, path)
+		cache.InsertFile(hash, path)
 	}
 
 	log.Infof("[%s] Sending finished", id)
+}
+
+func directoryTree(hash string) string {
+	t := hash[0 : len(hash)-2]
+
+	re := regexp.MustCompile(`..`)
+	p := "/home/loran/git/lab/finalcd/storage/"
+	r := re.FindAllString(t, -1)
+	return p + strings.Join(r, "/")
 }

@@ -7,33 +7,31 @@ import (
 	_ "net/http/pprof"
 
 	"github.com/julienschmidt/httprouter"
+	"github.com/lorankloeze/finalcd/cache"
+	"github.com/lorankloeze/finalcd/middleware"
+	"github.com/lorankloeze/finalcd/server"
 	log "github.com/sirupsen/logrus"
 	"github.com/urfave/negroni"
 )
 
 func main() {
-	// defer profile.Start(profile.MemProfile).Stop()
-	// go func(c chan int) {
-	// 	http.ListenAndServe(":8081", nil)
-	// }()
-
 	log.SetFormatter(&log.TextFormatter{
 		FullTimestamp: true,
 	})
 	log.SetLevel(log.DebugLevel)
 
-	store := InitStore("finalcd")
-	defer store.Close()
+	c := cache.Init()
+	defer c.Close()
 
 	router := httprouter.New()
-	router.POST("/", Upload)
-	router.GET("/l", List)
-	router.GET("/d/:hash", Download)
+	router.POST("/", server.Upload)
+	router.GET("/l", server.HashList)
+	router.GET("/d/:hash", server.Download)
 
 	n := negroni.New()
-	n.Use(negroni.HandlerFunc(requestIdMiddleware))
-	n.Use(negroni.HandlerFunc(corsMiddleWare))
-	n.Use(negroni.HandlerFunc(logMiddleware))
+	n.Use(negroni.HandlerFunc(middleware.RequestId))
+	n.Use(negroni.HandlerFunc(middleware.Cors))
+	n.Use(negroni.HandlerFunc(middleware.Log))
 	n.UseHandler(router)
 
 	log.Printf("PID: %d\n", os.Getpid())

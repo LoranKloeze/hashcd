@@ -1,4 +1,4 @@
-package main
+package cache
 
 import (
 	"bytes"
@@ -6,6 +6,7 @@ import (
 	"os"
 
 	"github.com/dgraph-io/ristretto"
+	"github.com/lorankloeze/finalcd/files"
 	log "github.com/sirupsen/logrus"
 )
 
@@ -13,7 +14,7 @@ var cache *ristretto.Cache
 var maxCacheSize = int64(1024 * 1024 * 512)   // 512 MB
 var maxCacheItemSize = int64(1024 * 1024 * 3) // 3 MB
 
-func InitStore(namespace string) *ristretto.Cache {
+func Init() *ristretto.Cache {
 	var err error
 	cache, err = ristretto.NewCache(&ristretto.Config{
 		NumCounters: 1e7,          // number of keys to track frequency of (10M).
@@ -28,10 +29,10 @@ func InitStore(namespace string) *ristretto.Cache {
 	return cache
 }
 
-func InsertCacheFile(hash string, path string) {
+func InsertFile(hash string, path string) {
 	log.Debugf("Checking if '%s' needs to be cached", hash)
 
-	s, err := FileSize(path)
+	s, err := files.FileSize(path)
 	if err != nil {
 		log.Errorf("Cannot determine file size, not caching '%s'", hash)
 		return
@@ -55,7 +56,7 @@ func InsertCacheFile(hash string, path string) {
 		return
 	}
 
-	size, err := FileSize(path)
+	size, err := files.FileSize(path)
 	if err != nil {
 		log.Error("Cannot determine file size, not updating cache")
 		return
@@ -68,7 +69,7 @@ func InsertCacheFile(hash string, path string) {
 	log.Debugf("Finished creating cache entry for '%s'", hash)
 }
 
-func FileFromCache(hash string) (io.ReadSeeker, bool) {
+func GetFile(hash string) (io.ReadSeeker, bool) {
 	log.Debugf("Searching cache entry for '%s'", hash)
 
 	value, found := cache.Get(hash)
