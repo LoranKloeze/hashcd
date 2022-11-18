@@ -43,9 +43,3 @@ func Download(w http.ResponseWriter, r *http.Request, p httprouter.Params) {
 
 	log.Infof("[%s] Sending finished", id)
 }
-
-// Disk   Redis
-// 3.511  3.522
-// 3.999  3.444
-// 3.692  3.656
-// 3.839  3.562
