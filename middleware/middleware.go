@@ -27,7 +27,7 @@ func clientIp(r *http.Request) string {
 
 func Cors(rw http.ResponseWriter, r *http.Request, next http.HandlerFunc) {
 	rw.Header().Set("Access-Control-Allow-Origin", "*")
-	rw.Header().Set("Access-Control-Expose-Headers", "Served-From")
+	rw.Header().Set("Access-Control-Expose-Headers", "X-Served-From")
 	next(rw, r)
 }
 

@@ -24,7 +24,7 @@ func main() {
 	defer c.Close()
 
 	router := httprouter.New()
-	router.POST("/", server.Upload)
+	router.POST("/u", server.Upload)
 	router.GET("/l", server.HashList)
 	router.GET("/d/:hash", server.Download)
 

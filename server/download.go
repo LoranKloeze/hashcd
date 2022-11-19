@@ -22,11 +22,11 @@ func Download(w http.ResponseWriter, r *http.Request, p httprouter.Params) {
 	reader, ok := cache.GetFile(hash)
 	if ok {
 		log.Infof("[%s] Serving from cache", id)
-		w.Header().Set("Served-From", "cache on server")
+		w.Header().Set("X-Served-From", "cache on server")
 		http.ServeContent(w, r, hash, time.Time{}, reader)
 	} else {
 		log.Infof("[%s] Serving from disk", id)
-		w.Header().Set("Served-From", "disk on server")
+		w.Header().Set("X-Served-From", "disk on server")
 		path := filepath.Join(directoryTree(hash), hash)
 
 		// ServeFile sanitizes the path to prevent traversal attacks
