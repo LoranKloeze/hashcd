@@ -42,7 +42,7 @@ func directoryTree(hash string) string {
 	t := hash[0 : len(hash)-2]
 
 	re := regexp.MustCompile(`..`)
-	p := os.Getenv(envStorage)
+	p := os.Getenv(envStorage) + "/"
 	r := re.FindAllString(t, -1)
 	return p + strings.Join(r, "/")
 }

@@ -21,7 +21,7 @@ function Uploader({onUpload = () => null}) {
       e.target.files[0].name
     );
 
-    axios.post("http://localhost:8080/", formData).then(e => {
+    axios.post("http://localhost:8080/u", formData).then(e => {
       onUpload()
       setFinished(true)
       setHash(e.data.hash)
