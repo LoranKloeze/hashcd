@@ -6,6 +6,7 @@ import (
 
 	_ "net/http/pprof"
 
+	"github.com/joho/godotenv"
 	"github.com/julienschmidt/httprouter"
 	"github.com/lorankloeze/finalcd/cache"
 	"github.com/lorankloeze/finalcd/middleware"
@@ -15,6 +16,11 @@ import (
 )
 
 func main() {
+	err := godotenv.Load()
+	if err != nil {
+		log.Errorf("Could not load dotenv: %s", err)
+		os.Exit(1)
+	}
 	log.SetFormatter(&log.TextFormatter{
 		FullTimestamp: true,
 	})
