@@ -68,4 +68,5 @@ Frontend: `cd frontend && yarn start`
 
 ## Deployment
 1. Build frontend `cd frontend && yarn build`
+2. Run `./deploy.sh`
 
