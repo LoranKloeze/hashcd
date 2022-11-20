@@ -6,6 +6,7 @@ services:
     container_name: server
     ports:
       - "3005:80"
+    command: [nginx-debug, '-g', 'daemon off;']
   app:
     build:
       context: .
