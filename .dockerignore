@@ -1,0 +1,6 @@
+# comment
+samples
+storage
+.env
+frontend
+!frontend/build

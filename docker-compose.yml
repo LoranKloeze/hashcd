@@ -1,0 +1,17 @@
+services:
+  server:
+    build:
+      context: .
+      dockerfile: Dockerfile.server
+    container_name: server
+    ports:
+      - "3005:80"
+  app:
+    build:
+      context: .
+      dockerfile: Dockerfile.app
+    container_name: app
+    environment:
+      - FINALCD_STORAGE=/storage
+      - FINALCD_CACHE_SIZE=512
+      - FINALCD_CACHE_ITEM_SIZE=3
