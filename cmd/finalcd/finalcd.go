@@ -31,7 +31,7 @@ func main() {
 	router := httprouter.New()
 	router.POST("/u", server.Upload)
 	router.GET("/l", server.HashList)
-	router.GET("/d/:hash", server.Download)
+	router.GET("/d/:hashish", server.Download)
 
 	n := negroni.New()
 	n.Use(negroni.HandlerFunc(middleware.RequestId))
