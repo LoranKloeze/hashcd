@@ -13,7 +13,7 @@ services:
       dockerfile: Dockerfile.app
     container_name: app
     environment:
-      - HASHCDSTORAGE=/storage
+      - HASHCD_STORAGE=/storage
       - HASHCD_CACHE_SIZE=512
       - HASHCD_CACHE_ITEM_SIZE=10
     volumes:
