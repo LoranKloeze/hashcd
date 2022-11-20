@@ -12,7 +12,7 @@ import (
 	"strings"
 
 	"github.com/julienschmidt/httprouter"
-	"github.com/lorankloeze/finalcd/middleware"
+	"github.com/lorankloeze/hashcd/middleware"
 	log "github.com/sirupsen/logrus"
 )
 

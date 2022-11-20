@@ -1,4 +1,4 @@
-module github.com/lorankloeze/finalcd
+module github.com/lorankloeze/hashcd
 
 go 1.19
 

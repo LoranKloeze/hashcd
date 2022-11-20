@@ -8,9 +8,9 @@ import (
 
 	"github.com/joho/godotenv"
 	"github.com/julienschmidt/httprouter"
-	"github.com/lorankloeze/finalcd/cache"
-	"github.com/lorankloeze/finalcd/middleware"
-	"github.com/lorankloeze/finalcd/server"
+	"github.com/lorankloeze/hashcd/cache"
+	"github.com/lorankloeze/hashcd/middleware"
+	"github.com/lorankloeze/hashcd/server"
 	log "github.com/sirupsen/logrus"
 	"github.com/urfave/negroni"
 )

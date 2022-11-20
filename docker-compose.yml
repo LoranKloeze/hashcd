@@ -13,9 +13,9 @@ services:
       dockerfile: Dockerfile.app
     container_name: app
     environment:
-      - FINALCD_STORAGE=/storage
-      - FINALCD_CACHE_SIZE=512
-      - FINALCD_CACHE_ITEM_SIZE=10
+      - HASHCDSTORAGE=/storage
+      - HASHCD_CACHE_SIZE=512
+      - HASHCD_CACHE_ITEM_SIZE=10
     volumes:
       - storage:/storage
     restart: always

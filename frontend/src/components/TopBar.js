@@ -6,7 +6,7 @@ function TopBar() {
     <div>
       <Navbar bg="light" expand="lg">
       <Container>
-        <Navbar.Brand href="#home">FinalCD</Navbar.Brand>
+        <Navbar.Brand href="#home">HashCD</Navbar.Brand>
         
       </Container>
     </Navbar>

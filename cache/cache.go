@@ -7,15 +7,15 @@ import (
 	"strconv"
 
 	"github.com/dgraph-io/ristretto"
-	"github.com/lorankloeze/finalcd/files"
+	"github.com/lorankloeze/hashcd/files"
 	log "github.com/sirupsen/logrus"
 )
 
 var cache *ristretto.Cache
 var maxCacheItemSize int64
 
-const envCacheSize = "FINALCD_CACHE_SIZE"
-const envCacheItemSize = "FINALCD_CACHE_ITEM_SIZE"
+const envCacheSize = "HASHCD_CACHE_SIZE"
+const envCacheItemSize = "HASHCD_CACHE_ITEM_SIZE"
 
 const megabyte = 1024 * 1024
 

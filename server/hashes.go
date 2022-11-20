@@ -8,8 +8,8 @@ import (
 	"path/filepath"
 
 	"github.com/julienschmidt/httprouter"
-	"github.com/lorankloeze/finalcd/files"
-	"github.com/lorankloeze/finalcd/middleware"
+	"github.com/lorankloeze/hashcd/files"
+	"github.com/lorankloeze/hashcd/middleware"
 	log "github.com/sirupsen/logrus"
 )
 

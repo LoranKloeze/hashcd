@@ -1,3 +1,3 @@
 package server
 
-const envStorage = "FINALCD_STORAGE"
+const envStorage = "HASHCD_STORAGE"

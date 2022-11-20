@@ -10,8 +10,8 @@ import (
 	"time"
 
 	"github.com/julienschmidt/httprouter"
-	"github.com/lorankloeze/finalcd/cache"
-	"github.com/lorankloeze/finalcd/middleware"
+	"github.com/lorankloeze/hashcd/cache"
+	"github.com/lorankloeze/hashcd/middleware"
 	log "github.com/sirupsen/logrus"
 )
 

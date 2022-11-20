@@ -10,7 +10,7 @@
       "request": "launch",
       "mode": "auto",
       "cwd": "${workspaceFolder}",
-      "program": "${workspaceFolder}/cmd/finalcd/finalcd.go"
+      "program": "${workspaceFolder}/cmd/hashcd/hashcd.go"
     }
   ]
 }
