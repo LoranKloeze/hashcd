@@ -2,3 +2,5 @@ storage/
 samples/
 out
 .env
+coverage.out
+coverage.html
