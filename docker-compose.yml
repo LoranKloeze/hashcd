@@ -6,6 +6,7 @@ services:
     container_name: server
     ports:
       - "3005:80"
+    restart: always
   app:
     build:
       context: .
@@ -17,5 +18,6 @@ services:
       - FINALCD_CACHE_ITEM_SIZE=10
     volumes:
       - storage:/storage
+    restart: always
 volumes:
   storage:
