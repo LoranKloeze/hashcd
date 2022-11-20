@@ -18,7 +18,7 @@ import (
 func Download(w http.ResponseWriter, r *http.Request, p httprouter.Params) {
 	id := r.Context().Value(middleware.ContextRequestIdKey)
 
-	hash, err := extractHash(p.ByName("hashish"))
+	hash, err := extractHash(r.RequestURI)
 	if err != nil {
 		w.WriteHeader(http.StatusNotFound)
 		return

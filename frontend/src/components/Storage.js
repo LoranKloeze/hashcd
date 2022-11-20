@@ -7,6 +7,7 @@ import { useState } from 'react';
 import { Button } from 'react-bootstrap';
 
 
+const devEnv = !process.env.NODE_ENV || process.env.NODE_ENV === 'development'
 
 const Waiting = () => {
   return (
@@ -41,8 +42,6 @@ function Storage({ hashes = [] }) {
 
   const headerItems = Object.keys(headers).map((k) =><div key={k}>{k}: {headers[k]}</div>)
 
-  content-dispostion setten
-  requests zoals /d/myfile_f3g783fg7328gf327832gf378gf32783f2.jpg?download=1 accepteren
   const listItems = hashes.map((hash) =>
     <ListGroup.Item key={hash.hash}>
       <div class="row align-items-start">
@@ -50,7 +49,7 @@ function Storage({ hashes = [] }) {
           <Button variant='light' className="me-2" size='sm' onClick={() => infoFile(hash.hash)}>
             Info
           </Button>
-          <a href={`/d/${hash.hash}`} target="_blank" rel="noreferrer" className="btn btn-sm btn-primary">Download</a>
+          <a href={devEnv ? `http://localhost:8080/d/${hash.hash}` : `/d/${hash.hash}`} target="_blank" rel="noreferrer" className="btn btn-sm btn-primary">Download</a>
         </div>
         <div class="col-10">
           <pre className="mb-0">{hash.hash} | {humanFileSize(hash.size)}</pre>
@@ -61,10 +60,6 @@ function Storage({ hashes = [] }) {
       
     </ListGroup.Item>
   )
-
-  // infoknopje
-  // downloadknopje
-
 
   return (
     <div>

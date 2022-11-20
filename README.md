@@ -26,8 +26,14 @@ Status 200 OK
   {"hash": "<hash of the file>"}
 ```
 
-### [GET] /d/:hash
-Download a file by its hash
+### [GET] /d/:hashish
+Download a file by its hash. The hash is extracted from everything in hashish.
+All these requests fetch the same file:  
+/d/13663375de6965ba08f3e898612630088500f3ee4f6104bdc9ddf7ce70056437
+/d/logo_13663375de6965ba08f3e898612630088500f3ee4f6104bdc9ddf7ce70056437.jpg
+/d/logo.jpg?t=13663375de6965ba08f3e898612630088500f3ee4f6104bdc9ddf7ce70056437
+/d/logo.jpg?myhashkey=13663375de6965ba08f3e898612630088500f3ee4f6104bdc9ddf7ce70056437
+
 #### Request
 ```shell
 curl --location --request GET 'http://localhost:8080/d/<hash of the file>
