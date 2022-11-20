@@ -8,14 +8,14 @@ function App() {
   const [hashes, setHashes] = useState([])
 
   useEffect(() => {
-    axios.get("http://localhost:8080/l").then(e => {
+    axios.get("/l").then(e => {
       setHashes(e.data)
     })
   }, [])
 
   function handleUpload() {
     console.log('uploaded file...');
-    axios.get("http://localhost:8080/l").then(e => {
+    axios.get("/l").then(e => {
       setHashes(e.data)
     })
   }

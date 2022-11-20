@@ -6,7 +6,6 @@ services:
     container_name: server
     ports:
       - "3005:80"
-    command: [nginx-debug, '-g', 'daemon off;']
   app:
     build:
       context: .
@@ -15,4 +14,8 @@ services:
     environment:
       - FINALCD_STORAGE=/storage
       - FINALCD_CACHE_SIZE=512
-      - FINALCD_CACHE_ITEM_SIZE=3
+      - FINALCD_CACHE_ITEM_SIZE=10
+    volumes:
+      - storage:/storage
+volumes:
+  storage:

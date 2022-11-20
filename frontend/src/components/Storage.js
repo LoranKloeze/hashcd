@@ -31,7 +31,7 @@ function Storage({ hashes = [] }) {
 
   function retrieveFile(hash) {
     setLoading(true)
-    axios.get(`http://localhost:8080/d/${hash}?t=${new Date().getTime()}`).then(e => {
+    axios.get(`/d/${hash}?t=${new Date().getTime()}`).then(e => {
       setHeaders(e.headers)
       setLoading(false)
     })
