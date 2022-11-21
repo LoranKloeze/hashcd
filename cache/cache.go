@@ -2,36 +2,27 @@ package cache
 
 import (
 	"bytes"
+	"fmt"
 	"io"
 	"os"
-	"strconv"
 
 	"github.com/dgraph-io/ristretto"
 	"github.com/lorankloeze/hashcd/files"
 	log "github.com/sirupsen/logrus"
 )
 
-var cache *ristretto.Cache
+var c *ristretto.Cache
 var maxCacheItemSize int64
-
-const envCacheSize = "HASHCD_CACHE_SIZE"
-const envCacheItemSize = "HASHCD_CACHE_ITEM_SIZE"
 
 const megabyte = 1024 * 1024
 
-func Init() *ristretto.Cache {
-	cacheSize, err := strconv.ParseInt(os.Getenv(envCacheSize), 10, 64)
-	if err != nil {
-		log.Errorf("Could not convert max cache size environment variable to a number: %s", err)
-	}
+// Init initializes the cache and returns the cache. The cache size sets the cache
+// capacity in megabytes. The item size sets the maximum size per item in megabytes.
+func Init(cacheSize int64, itemSize int64) (*ristretto.Cache, error) {
+	maxCacheItemSize = itemSize * megabyte
+	var err error
 
-	maxCacheItemSize, err = strconv.ParseInt(os.Getenv(envCacheItemSize), 10, 64)
-	if err != nil {
-		log.Errorf("Could not convert max cache item size environment variable to a number: %s", err)
-	}
-	maxCacheItemSize *= megabyte
-
-	cache, err = ristretto.NewCache(&ristretto.Config{
+	c, err = ristretto.NewCache(&ristretto.Config{
 		NumCounters: 1e7,
 		MaxCost:     cacheSize * megabyte,
 		BufferItems: 64,
@@ -39,12 +30,12 @@ func Init() *ristretto.Cache {
 		Metrics:     false,
 	})
 	if err != nil {
-		log.Fatal(err)
+		return nil, fmt.Errorf("could not initialize cache: %v", err)
 	}
-	return cache
+	return c, nil
 }
 
-func InsertFile(hash string, path string) {
+func Insert(hash string, path string) {
 	log.Debugf("Checking if '%s' needs to be cached", hash)
 
 	s, err := files.FileSize(path)
@@ -65,7 +56,7 @@ func InsertFile(hash string, path string) {
 	}
 	defer f.Close()
 
-	contents, err := io.ReadAll(f)
+	contents, err := io.ReadAll(f) // ReadAll is fine here, it should fit in memory anyway
 	if err != nil {
 		log.Errorf("Could not read file for caching '%s': %s", hash, err)
 		return
@@ -76,7 +67,7 @@ func InsertFile(hash string, path string) {
 		log.Error("Cannot determine file size, not updating cache")
 		return
 	}
-	ok := cache.Set(hash, contents, size)
+	ok := c.Set(hash, contents, size)
 	if !ok {
 		log.Error("Cache not updated")
 	}
@@ -84,10 +75,10 @@ func InsertFile(hash string, path string) {
 	log.Debugf("Finished creating cache entry for '%s'", hash)
 }
 
-func GetFile(hash string) (io.ReadSeeker, bool) {
+func Retrieve(hash string) (io.ReadSeeker, bool) {
 	log.Debugf("Searching cache entry for '%s'", hash)
 
-	value, found := cache.Get(hash)
+	value, found := c.Get(hash)
 	if !found {
 		log.Debugf("Cache entry not found for '%s'", hash)
 		return nil, false

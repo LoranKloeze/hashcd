@@ -33,7 +33,7 @@ func Download(w http.ResponseWriter, r *http.Request, p httprouter.Params) {
 		return
 	}
 
-	reader, ok := cache.GetFile(hash)
+	reader, ok := cache.Retrieve(hash)
 	if ok {
 		log.Infof("[%s] Serving from cache", id)
 		w.Header().Set("X-Served-From", "cache on server")
@@ -41,10 +41,9 @@ func Download(w http.ResponseWriter, r *http.Request, p httprouter.Params) {
 	} else {
 		log.Infof("[%s] Serving from disk", id)
 		w.Header().Set("X-Served-From", "disk on server")
+		cache.Insert(hash, path)
+		http.ServeFile(w, r, path) // ServeFile sanitizes the path to prevent traversal attacks
 	}
-
-	http.ServeFile(w, r, path) // ServeFile sanitizes the path to prevent traversal attacks
-	cache.InsertFile(hash, path)
 
 	log.Infof("[%s] Sending finished", id)
 }

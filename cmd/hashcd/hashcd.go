@@ -3,9 +3,11 @@ package main
 import (
 	"net/http"
 	"os"
+	"strconv"
 
 	_ "net/http/pprof"
 
+	"github.com/dgraph-io/ristretto"
 	"github.com/joho/godotenv"
 	"github.com/julienschmidt/httprouter"
 	"github.com/lorankloeze/hashcd/cache"
@@ -14,6 +16,9 @@ import (
 	log "github.com/sirupsen/logrus"
 	"github.com/urfave/negroni"
 )
+
+const envCacheSize = "HASHCD_CACHE_SIZE"
+const envCacheItemSize = "HASHCD_CACHE_ITEM_SIZE"
 
 func main() {
 	err := godotenv.Load()
@@ -25,7 +30,7 @@ func main() {
 	})
 	log.SetLevel(log.DebugLevel)
 
-	c := cache.Init()
+	c := initCache()
 	defer c.Close()
 
 	router := httprouter.New()
@@ -42,4 +47,24 @@ func main() {
 	log.Printf("PID: %d\n", os.Getpid())
 	log.Println("Listening on port 8080")
 	log.Fatal(http.ListenAndServe(":8080", n))
+}
+
+func initCache() *ristretto.Cache {
+
+	cacheSize, err := strconv.ParseInt(os.Getenv(envCacheSize), 10, 64)
+	if err != nil {
+		log.Errorf("%s is not a number: %s", envCacheSize, err)
+	}
+
+	maxCacheItemSize, err := strconv.ParseInt(os.Getenv(envCacheItemSize), 10, 64)
+	if err != nil {
+		log.Errorf("%s is not a number: %s", envCacheItemSize, err)
+	}
+
+	c, err := cache.Init(cacheSize, maxCacheItemSize)
+	if err != nil {
+		log.Fatalf("Error setting up cache: %v", err)
+	}
+
+	return c
 }
