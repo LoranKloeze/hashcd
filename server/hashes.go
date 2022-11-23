@@ -27,7 +27,7 @@ func HashList(w http.ResponseWriter, r *http.Request, p httprouter.Params) {
 
 	w.Header().Set("Content-Type", "application/json")
 
-	filepath.WalkDir(config.storageDir, func(path string, d fs.DirEntry, err error) error {
+	filepath.WalkDir(Config.StorageDir, func(path string, d fs.DirEntry, err error) error {
 		if err != nil {
 			log.Errorf("Could not walk directory: %s", err)
 			os.Exit(1)

@@ -36,7 +36,7 @@ func initDirectories(hash string, storageDir string) (createdPath string, err er
 }
 
 func validateConfig() {
-	if config.storageDir == "" {
+	if Config.StorageDir == "" {
 		log.Fatal("config.storageDir cannot be empty")
 	}
 }

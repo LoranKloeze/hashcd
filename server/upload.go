@@ -55,7 +55,7 @@ func Upload(w http.ResponseWriter, r *http.Request, _ httprouter.Params) {
 	defer f.Close()
 
 	hash := genHash(f)
-	dirs, err := initDirectories(hash, config.storageDir)
+	dirs, err := initDirectories(hash, Config.StorageDir)
 	if err != nil {
 		log.Fatalf("[%s] Could not create directory storage tree %s\n", id, err)
 		w.WriteHeader(http.StatusInternalServerError)

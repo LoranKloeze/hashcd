@@ -61,7 +61,7 @@ func directoryTree(hash string) string {
 	t := hash[0 : len(hash)-2]
 
 	re := regexp.MustCompile(`..`)
-	p := config.storageDir + "/"
+	p := Config.StorageDir + "/"
 	r := re.FindAllString(t, -1)
 	return p + strings.Join(r, "/")
 }

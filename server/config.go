@@ -1,11 +1,7 @@
 package server
 
-import "os"
-
-type Config struct {
-	storageDir string
+type Configuration struct {
+	StorageDir string
 }
 
-var config = Config{
-	storageDir: os.Getenv("HASHCD_STORAGE"),
-}
+var Config Configuration

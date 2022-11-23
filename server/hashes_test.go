@@ -14,8 +14,8 @@ import (
 )
 
 func TestHashList(t *testing.T) {
-	config.storageDir = tempStorageDir(t)
-	defer os.RemoveAll(config.storageDir)
+	Config.StorageDir = tempStorageDir(t)
+	defer os.RemoveAll(Config.StorageDir)
 
 	createDummyHash(t, []byte{'a', 'b', 'c'})                // Hash:
 	createDummyHash(t, []byte{'t', 'e', 's', 't'})           // Hash:
@@ -57,7 +57,7 @@ func createDummyHash(t *testing.T, data []byte) string {
 	io.Copy(hashData, bytes.NewBuffer(data))
 	hashHex := hex.EncodeToString(hashData.Sum(nil))
 
-	dir, err := initDirectories(hashHex, config.storageDir)
+	dir, err := initDirectories(hashHex, Config.StorageDir)
 	if err != nil {
 		t.Errorf("unexpected error: %v", err)
 	}

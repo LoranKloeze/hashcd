@@ -22,6 +22,10 @@ const envCacheItemSize = "HASHCD_CACHE_ITEM_SIZE"
 
 func main() {
 	err := godotenv.Load()
+	server.Config = server.Configuration{
+		StorageDir: os.Getenv("HASHCD_STORAGE"),
+	}
+
 	if err != nil {
 		log.Info("No .env file found, that's fine: using regular environment")
 	}
