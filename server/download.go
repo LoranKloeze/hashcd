@@ -3,7 +3,6 @@ package server
 import (
 	"fmt"
 	"net/http"
-	"os"
 	"path/filepath"
 	"regexp"
 	"strings"
@@ -15,7 +14,8 @@ import (
 	log "github.com/sirupsen/logrus"
 )
 
-func Download(w http.ResponseWriter, r *http.Request, p httprouter.Params) {
+func Download(w http.ResponseWriter, r *http.Request, _ httprouter.Params) {
+	validateConfig()
 	id := r.Context().Value(middleware.ContextRequestIdKey)
 
 	hash, err := extractHash(r.RequestURI)
@@ -61,7 +61,7 @@ func directoryTree(hash string) string {
 	t := hash[0 : len(hash)-2]
 
 	re := regexp.MustCompile(`..`)
-	p := os.Getenv(envStorage) + "/"
+	p := config.storageDir + "/"
 	r := re.FindAllString(t, -1)
 	return p + strings.Join(r, "/")
 }

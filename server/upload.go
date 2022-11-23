@@ -8,8 +8,6 @@ import (
 	"io"
 	"net/http"
 	"os"
-	"regexp"
-	"strings"
 
 	"github.com/julienschmidt/httprouter"
 	"github.com/lorankloeze/hashcd/middleware"
@@ -25,8 +23,11 @@ type errorResponse struct {
 }
 
 func Upload(w http.ResponseWriter, r *http.Request, _ httprouter.Params) {
+	validateConfig()
 	id := r.Context().Value(middleware.ContextRequestIdKey)
-	maxMem := int64(10 << 20) // 10MB
+
+	//TODO: What is this? Explain.
+	maxMem := int64(10 << 20) // 10MB -
 
 	log.Infof("[%s] Receiving file", id)
 	err := r.ParseMultipartForm(maxMem)
@@ -54,7 +55,7 @@ func Upload(w http.ResponseWriter, r *http.Request, _ httprouter.Params) {
 	defer f.Close()
 
 	hash := genHash(f)
-	dirs, err := initDirectories(hash)
+	dirs, err := initDirectories(hash, config.storageDir)
 	if err != nil {
 		log.Fatalf("[%s] Could not create directory storage tree %s\n", id, err)
 		w.WriteHeader(http.StatusInternalServerError)
@@ -107,20 +108,4 @@ func genHash(f io.Reader) string {
 		log.Fatalf("Could not calculate SHA256 hash %s\n", err)
 	}
 	return hex.EncodeToString(hash.Sum(nil))
-}
-
-func initDirectories(hash string) (string, error) {
-	t := hash[0 : len(hash)-2]
-
-	re := regexp.MustCompile(`..`)
-	p := os.Getenv(envStorage) + "/"
-	r := re.FindAllString(t, -1)
-	p += strings.Join(r, "/")
-	err := os.MkdirAll(p, 0755)
-	if err != nil {
-		log.Errorf("Could not create directory storage tree: %s", err)
-		return "", err
-	}
-	log.Debugf("Initialized directory storage tree '%s'", p)
-	return p, nil
 }

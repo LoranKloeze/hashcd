@@ -4,3 +4,5 @@ out
 .env
 coverage.out
 coverage.html
+/tmp/*
+!/tmp/.keep

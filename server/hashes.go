@@ -19,6 +19,7 @@ type fileStat struct {
 }
 
 func HashList(w http.ResponseWriter, r *http.Request, p httprouter.Params) {
+	validateConfig()
 	id := r.Context().Value(middleware.ContextRequestIdKey)
 	res := []fileStat{}
 
@@ -26,7 +27,7 @@ func HashList(w http.ResponseWriter, r *http.Request, p httprouter.Params) {
 
 	w.Header().Set("Content-Type", "application/json")
 
-	filepath.WalkDir(os.Getenv(envStorage), func(path string, d fs.DirEntry, err error) error {
+	filepath.WalkDir(config.storageDir, func(path string, d fs.DirEntry, err error) error {
 		if err != nil {
 			log.Errorf("Could not walk directory: %s", err)
 			os.Exit(1)
@@ -34,7 +35,8 @@ func HashList(w http.ResponseWriter, r *http.Request, p httprouter.Params) {
 		if !d.IsDir() {
 			s, err := files.FileSize(path)
 			if err != nil {
-				s = 0
+				log.Errorf("Cannot determine file size: %s", err)
+				s = -1
 			}
 			res = append(res, fileStat{Hash: d.Name(), Size: s})
 		}
