@@ -7,6 +7,7 @@ import (
 	"net/http/httptest"
 	"os"
 	"testing"
+	"time"
 
 	"github.com/google/go-cmp/cmp"
 	"github.com/lorankloeze/hashcd/cache"
@@ -64,6 +65,8 @@ func TestDownloadCachedFile(t *testing.T) {
 		t.Errorf("first download, expected a file from %q, got a file from %q", exp, w.Result().Header["X-Served-From"][0])
 	}
 
+	time.Sleep(10 * time.Millisecond) // Wait for value to pass through cache buffers
+
 	// Second download serves from cache
 	r = httptest.NewRequest("GET", p, nil)
 	w = httptest.NewRecorder()
@@ -74,4 +77,38 @@ func TestDownloadCachedFile(t *testing.T) {
 		t.Errorf("second download, expected a file from %q, got a file from %q", exp, w.Result().Header["X-Served-From"][0])
 	}
 
+}
+
+func TestDownloadUncachedFile(t *testing.T) {
+	Config.StorageDir = tempStorageDir(t)
+	defer os.RemoveAll(Config.StorageDir)
+	c, _ := cache.Init(1, 1)
+	defer c.Close()
+
+	mb := 1024 * 1024
+	b := make([]byte, 2*mb)
+	h := createDummyHash(t, b)
+	p := fmt.Sprintf("/d/%s", h)
+
+	// First download serves from disk
+	r := httptest.NewRequest("GET", p, nil)
+	w := httptest.NewRecorder()
+	Download(w, r, nil)
+
+	exp := "disk on server"
+	if w.Result().Header["X-Served-From"][0] != exp {
+		t.Errorf("first download, expected a file from %q, got a file from %q", exp, w.Result().Header["X-Served-From"][0])
+	}
+
+	time.Sleep(10 * time.Millisecond) // Wait for value to pass through cache buffers
+
+	// Second download serves from disk too
+	r = httptest.NewRequest("GET", p, nil)
+	w = httptest.NewRecorder()
+	Download(w, r, nil)
+
+	exp = "disk on server"
+	if w.Result().Header["X-Served-From"][0] != exp {
+		t.Errorf("second download, expected a file from %q, got a file from %q", exp, w.Result().Header["X-Served-From"][0])
+	}
 }
