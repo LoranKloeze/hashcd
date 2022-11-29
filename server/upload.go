@@ -11,6 +11,7 @@ import (
 
 	"github.com/julienschmidt/httprouter"
 	"github.com/lorankloeze/hashcd/middleware"
+	"github.com/lorankloeze/hashcd/sizeutils"
 	log "github.com/sirupsen/logrus"
 )
 
@@ -26,11 +27,9 @@ func Upload(w http.ResponseWriter, r *http.Request, _ httprouter.Params) {
 	validateConfig()
 	id := r.Context().Value(middleware.ContextRequestIdKey)
 
-	//TODO: What is this? Explain.
-	maxMem := int64(10 << 20) // 10MB -
-
 	log.Infof("[%s] Receiving file", id)
-	err := r.ParseMultipartForm(maxMem)
+
+	err := r.ParseMultipartForm(10 * sizeutils.Megabyte)
 	if err != nil {
 		log.Printf("[%s] Could not parse form: %s\n", id, err)
 		w.WriteHeader(http.StatusUnprocessableEntity)

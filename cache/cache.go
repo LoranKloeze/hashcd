@@ -8,23 +8,22 @@ import (
 
 	"github.com/dgraph-io/ristretto"
 	"github.com/lorankloeze/hashcd/files"
+	"github.com/lorankloeze/hashcd/sizeutils"
 	log "github.com/sirupsen/logrus"
 )
 
 var c *ristretto.Cache
 var maxCacheItemSize int64
 
-const megabyte = 1024 * 1024
-
 // Init initializes the cache and returns the cache. The cache size sets the cache
 // capacity in megabytes. The item size sets the maximum size per item in megabytes.
 func Init(cacheSize int64, itemSize int64) (*ristretto.Cache, error) {
-	maxCacheItemSize = itemSize * megabyte
+	maxCacheItemSize = itemSize * sizeutils.Megabyte
 	var err error
 
 	c, err = ristretto.NewCache(&ristretto.Config{
 		NumCounters: 1e7,
-		MaxCost:     cacheSize * megabyte,
+		MaxCost:     cacheSize * sizeutils.Megabyte,
 		BufferItems: 64,
 		OnEvict:     func(item *ristretto.Item) { log.Debugf("Cache: evicted %d - cost %d", item.Key, item.Cost) },
 		Metrics:     false,
