@@ -3,11 +3,13 @@ package server
 import (
 	"fmt"
 	"io"
+	"net/http"
 	"net/http/httptest"
 	"os"
 	"testing"
 
 	"github.com/google/go-cmp/cmp"
+	"github.com/lorankloeze/hashcd/cache"
 )
 
 func TestDownload(t *testing.T) {
@@ -25,6 +27,51 @@ func TestDownload(t *testing.T) {
 	got, _ := io.ReadAll(w.Body)
 	if !cmp.Equal(exp, got) {
 		t.Errorf("expected download to return %v, got %v", exp, got)
+	}
+
+}
+
+func TestDownloadNonExisting(t *testing.T) {
+	Config.StorageDir = tempStorageDir(t)
+	defer os.RemoveAll(Config.StorageDir)
+
+	r := httptest.NewRequest("GET", "/d/idonotexist", nil)
+	w := httptest.NewRecorder()
+
+	Download(w, r, nil)
+
+	if w.Result().StatusCode != http.StatusNotFound {
+		t.Errorf("expected non existing file to return 404")
+	}
+}
+
+func TestDownloadCachedFile(t *testing.T) {
+	Config.StorageDir = tempStorageDir(t)
+	defer os.RemoveAll(Config.StorageDir)
+	c, _ := cache.Init(1, 1)
+	defer c.Close()
+
+	h := createDummyHash(t, []byte{'g', 'o', 'g', 'o', 'g', 'o'})
+	p := fmt.Sprintf("/d/%s", h)
+
+	// First download serves from disk
+	r := httptest.NewRequest("GET", p, nil)
+	w := httptest.NewRecorder()
+	Download(w, r, nil)
+
+	exp := "disk on server"
+	if w.Result().Header["X-Served-From"][0] != exp {
+		t.Errorf("first download, expected a file from %q, got a file from %q", exp, w.Result().Header["X-Served-From"][0])
+	}
+
+	// Second download serves from cache
+	r = httptest.NewRequest("GET", p, nil)
+	w = httptest.NewRecorder()
+	Download(w, r, nil)
+
+	exp = "cache on server"
+	if w.Result().Header["X-Served-From"][0] != exp {
+		t.Errorf("second download, expected a file from %q, got a file from %q", exp, w.Result().Header["X-Served-From"][0])
 	}
 
 }
