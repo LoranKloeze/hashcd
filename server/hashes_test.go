@@ -15,6 +15,7 @@ func TestHashList(t *testing.T) {
 	createDummyHash(t, []byte{'a', 'b', 'c'})
 	createDummyHash(t, []byte{'t', 'e', 's', 't'})
 	createDummyHash(t, []byte{'g', 'o', 'g', 'o', 'g', 'o'})
+
 	w := httptest.NewRecorder()
 	r := httptest.NewRequest("GET", "/", nil)
 

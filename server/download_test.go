@@ -21,6 +21,7 @@ func TestDownload(t *testing.T) {
 	h := createDummyHash(t, exp)
 	p := fmt.Sprintf("/d/%s", h)
 	r := httptest.NewRequest("GET", p, nil)
+	defer r.Body.Close()
 	w := httptest.NewRecorder()
 
 	Download(w, r, nil)
@@ -37,6 +38,7 @@ func TestDownloadNonExisting(t *testing.T) {
 	defer os.RemoveAll(Config.StorageDir)
 
 	r := httptest.NewRequest("GET", "/d/idonotexist", nil)
+	defer r.Body.Close()
 	w := httptest.NewRecorder()
 
 	Download(w, r, nil)
@@ -57,6 +59,7 @@ func TestDownloadCachedFile(t *testing.T) {
 
 	// First download serves from disk
 	r := httptest.NewRequest("GET", p, nil)
+	defer r.Body.Close()
 	w := httptest.NewRecorder()
 	Download(w, r, nil)
 
@@ -92,6 +95,7 @@ func TestDownloadUncachedFile(t *testing.T) {
 
 	// First download serves from disk
 	r := httptest.NewRequest("GET", p, nil)
+	defer r.Body.Close()
 	w := httptest.NewRecorder()
 	Download(w, r, nil)
 
