@@ -1,15 +1,10 @@
 package server
 
 import (
-	"bytes"
-	"crypto/sha256"
-	"encoding/hex"
 	"encoding/json"
-	"io"
 	"net/http"
 	"net/http/httptest"
 	"os"
-	"path/filepath"
 	"testing"
 )
 
@@ -17,9 +12,9 @@ func TestHashList(t *testing.T) {
 	Config.StorageDir = tempStorageDir(t)
 	defer os.RemoveAll(Config.StorageDir)
 
-	createDummyHash(t, []byte{'a', 'b', 'c'})                // Hash:
-	createDummyHash(t, []byte{'t', 'e', 's', 't'})           // Hash:
-	createDummyHash(t, []byte{'g', 'o', 'g', 'o', 'g', 'o'}) // Hash:
+	createDummyHash(t, []byte{'a', 'b', 'c'})
+	createDummyHash(t, []byte{'t', 'e', 's', 't'})
+	createDummyHash(t, []byte{'g', 'o', 'g', 'o', 'g', 'o'})
 	w := httptest.NewRecorder()
 	r := httptest.NewRequest("GET", "/", nil)
 
@@ -50,33 +45,4 @@ func TestHashList(t *testing.T) {
 			t.Errorf("expcted size %d for item %d, got %d", e.Size, i, res[i].Size)
 		}
 	}
-}
-
-func createDummyHash(t *testing.T, data []byte) string {
-	hashData := sha256.New()
-	io.Copy(hashData, bytes.NewBuffer(data))
-	hashHex := hex.EncodeToString(hashData.Sum(nil))
-
-	dir, err := initDirectories(hashHex, Config.StorageDir)
-	if err != nil {
-		t.Errorf("unexpected error: %v", err)
-	}
-
-	f, err := os.Create(filepath.Join(dir, hashHex))
-	if err != nil {
-		t.Fatalf("unexpected error: %v", err)
-	}
-	defer f.Close()
-	buf := bytes.NewBuffer(data)
-	io.Copy(f, buf)
-
-	return hashHex
-}
-
-func tempStorageDir(t *testing.T) string {
-	tmpDir, err := os.MkdirTemp("", "hashcd-storage")
-	if err != nil {
-		t.Fatal("cannot create temporary directory 'hashcd-storage'")
-	}
-	return tmpDir
 }
