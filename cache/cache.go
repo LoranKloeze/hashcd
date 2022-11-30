@@ -54,7 +54,7 @@ func Insert(hash string, path string) {
 
 	f, err := os.Open(path)
 	if err != nil {
-		log.G(ctx).Errorf("Could not open file for caching: %v", hash, err)
+		log.G(ctx).Errorf("Could not open file for caching: %v", err)
 		return
 	}
 	defer f.Close()

@@ -60,7 +60,7 @@ func TestLog(t *testing.T) {
 
 	Log(rw, w, func(w http.ResponseWriter, r *http.Request) {})
 
-	for _, want := range []string{`myid`, `192.0.2.1`, `Request start`, `Request finished`} {
+	for _, want := range []string{`myid`, `192.0.2.1`, `Request from`, `Request finished`} {
 		re := regexp.MustCompile(want)
 		if !re.MatchString(buf.String()) {
 			t.Log(buf.String())
