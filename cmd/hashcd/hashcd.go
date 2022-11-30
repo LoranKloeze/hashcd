@@ -11,9 +11,11 @@ import (
 	"github.com/joho/godotenv"
 	"github.com/julienschmidt/httprouter"
 	"github.com/lorankloeze/hashcd/cache"
+	"github.com/lorankloeze/hashcd/log"
 	"github.com/lorankloeze/hashcd/middleware"
 	"github.com/lorankloeze/hashcd/server"
-	log "github.com/sirupsen/logrus"
+	"github.com/sirupsen/logrus"
+
 	"github.com/urfave/negroni"
 )
 
@@ -21,18 +23,19 @@ const envCacheSize = "HASHCD_CACHE_SIZE"
 const envCacheItemSize = "HASHCD_CACHE_ITEM_SIZE"
 
 func main() {
+	logrus.SetFormatter(&logrus.TextFormatter{
+		FullTimestamp: true,
+	})
+	logrus.SetLevel(logrus.DebugLevel)
+
 	err := godotenv.Load()
+	if err != nil {
+		log.L.Info("No .env file found, that's fine: using regular environment")
+	}
+
 	server.Config = server.Configuration{
 		StorageDir: os.Getenv("HASHCD_STORAGE"),
 	}
-
-	if err != nil {
-		log.Info("No .env file found, that's fine: using regular environment")
-	}
-	log.SetFormatter(&log.TextFormatter{
-		FullTimestamp: true,
-	})
-	log.SetLevel(log.DebugLevel)
 
 	c := initCache()
 	defer c.Close()
@@ -48,26 +51,26 @@ func main() {
 	n.Use(negroni.HandlerFunc(middleware.Log))
 	n.UseHandler(router)
 
-	log.Printf("PID: %d\n", os.Getpid())
-	log.Println("Listening on port 8080")
-	log.Fatal(http.ListenAndServe(":8080", n))
+	log.L.Infof("PID: %d\n", os.Getpid())
+	log.L.Info("Listening on port 8080")
+	log.L.Fatal(http.ListenAndServe(":8080", n))
 }
 
 func initCache() *ristretto.Cache {
 
 	cacheSize, err := strconv.ParseInt(os.Getenv(envCacheSize), 10, 64)
 	if err != nil {
-		log.Errorf("%s is not a number: %s", envCacheSize, err)
+		log.L.Fatalf("envCacheSize: %q is not a number", envCacheSize)
 	}
 
 	maxCacheItemSize, err := strconv.ParseInt(os.Getenv(envCacheItemSize), 10, 64)
 	if err != nil {
-		log.Errorf("%s is not a number: %s", envCacheItemSize, err)
+		log.L.Fatalf("envCacheItemSize: %q is not a number", envCacheItemSize)
 	}
 
 	c, err := cache.Init(cacheSize, maxCacheItemSize)
 	if err != nil {
-		log.Fatalf("Error setting up cache: %v", err)
+		log.L.Fatalf("Failed to setup cache: %v", err)
 	}
 
 	return c

@@ -2,15 +2,18 @@ package cache
 
 import (
 	"bytes"
+	"context"
 	"fmt"
 	"io"
 	"os"
 
 	"github.com/dgraph-io/ristretto"
 	"github.com/lorankloeze/hashcd/files"
+	"github.com/lorankloeze/hashcd/log"
 	"github.com/lorankloeze/hashcd/sizeutils"
-	log "github.com/sirupsen/logrus"
 )
+
+const logHashKey = "hash"
 
 var c *ristretto.Cache
 var maxCacheItemSize int64
@@ -25,7 +28,7 @@ func Init(cacheSize int64, itemSize int64) (*ristretto.Cache, error) {
 		NumCounters: 1e7,
 		MaxCost:     cacheSize * sizeutils.Megabyte,
 		BufferItems: 64,
-		OnEvict:     func(item *ristretto.Item) { log.Debugf("Cache: evicted %d - cost %d", item.Key, item.Cost) },
+		OnEvict:     onEvict,
 		Metrics:     false,
 	})
 	if err != nil {
@@ -35,53 +38,61 @@ func Init(cacheSize int64, itemSize int64) (*ristretto.Cache, error) {
 }
 
 func Insert(hash string, path string) {
-	log.Debugf("Checking if '%s' needs to be cached", hash)
+	ctx := log.WithLogger(context.Background(), log.L.WithField(logHashKey, hash))
+	log.G(ctx).Debugf("Check if caching is needed")
 
 	s, err := files.FileSize(path)
 	if err != nil {
-		log.Errorf("Cannot determine file size, not caching '%s'", hash)
+		log.G(ctx).Errorf("Failed to determine file size, skipping cache: %v", err)
 		return
 	}
 
 	if s > maxCacheItemSize {
-		log.Debugf("File size (%d) exceeds cache item limit (%d), skipping cache", s, maxCacheItemSize)
+		log.G(ctx).Debugf("File size (%d) exceeds cache item limit (%d), skipping cache", s, maxCacheItemSize)
 		return
 	}
 
 	f, err := os.Open(path)
 	if err != nil {
-		log.Errorf("Could not open file for caching '%s': %s", hash, err)
+		log.G(ctx).Errorf("Could not open file for caching: %v", hash, err)
 		return
 	}
 	defer f.Close()
 
 	contents, err := io.ReadAll(f) // ReadAll is fine here, it should fit in memory anyway
 	if err != nil {
-		log.Errorf("Could not read file for caching '%s': %s", hash, err)
+		log.G(ctx).Errorf("Could not read file for caching: %v", err)
 		return
 	}
 
 	size, err := files.FileSize(path)
 	if err != nil {
-		log.Error("Cannot determine file size, not updating cache")
+		log.G(ctx).Errorf("Cannot determine file size, not updating cache: %v", err)
 		return
 	}
 	ok := c.Set(hash, contents, size)
 	if !ok {
-		log.Error("Cache not updated")
+		log.G(ctx).Errorf("Cache not updated: Ristretto Set method returned false")
+		return
 	}
 
-	log.Debugf("Finished creating cache entry for '%s'", hash)
+	log.G(ctx).Debugf("Finished creating cache entry")
 }
 
 func Retrieve(hash string) (io.ReadSeeker, bool) {
-	log.Debugf("Searching cache entry for '%s'", hash)
+	ctx := log.WithLogger(context.Background(), log.L.WithField(logHashKey, hash))
+	log.G(ctx).Debugf("Searching cache entry")
 
 	value, found := c.Get(hash)
 	if !found {
-		log.Debugf("Cache entry not found for '%s'", hash)
+		log.G(ctx).Debugf("Cache entry not found")
 		return nil, false
 	}
 
 	return bytes.NewReader(value.([]byte)), true
+}
+
+func onEvict(item *ristretto.Item) {
+	ctx := log.WithLogger(context.Background(), log.L.WithField(logHashKey, item.Key))
+	log.G(ctx).Debugf("Evicted from cache - cost %d", item.Cost)
 }

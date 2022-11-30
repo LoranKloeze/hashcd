@@ -1,18 +1,23 @@
 package server
 
 import (
+	"context"
 	"crypto/sha256"
 	"encoding/hex"
 	"encoding/json"
 	"fmt"
 	"io"
+	"mime/multipart"
 	"net/http"
 	"os"
+	"path/filepath"
 
 	"github.com/julienschmidt/httprouter"
+	"github.com/lorankloeze/hashcd/files"
+	"github.com/lorankloeze/hashcd/log"
 	"github.com/lorankloeze/hashcd/middleware"
+
 	"github.com/lorankloeze/hashcd/sizeutils"
-	log "github.com/sirupsen/logrus"
 )
 
 type okResponse struct {
@@ -26,85 +31,97 @@ type errorResponse struct {
 func Upload(w http.ResponseWriter, r *http.Request, _ httprouter.Params) {
 	validateConfig()
 	id := r.Context().Value(middleware.ContextRequestIdKey)
+	ctx := log.WithLogger(r.Context(), log.L.WithField("reqid", id))
 
-	log.Infof("[%s] Receiving file", id)
+	log.G(ctx).Info("Receiving file")
 
+	file, err := fileFromForm(r)
+	if err != nil {
+		log.G(ctx).Errorf("Unprocessable form: %v", err)
+		respondInvalid(w, err)
+		return
+	}
+	defer file.Close()
+
+	hash := genHash(ctx, file)
+	dirs, err := initDirectories(hash, Config.StorageDir)
+	if err != nil {
+		log.G(ctx).Errorf("Directory storage tree not created: %v", err)
+		respondError(w)
+		return
+	}
+
+	path := filepath.Join(dirs, hash)
+	if files.FileExists(path) {
+		respondHash(w, hash, http.StatusOK)
+		return
+	}
+
+	err = saveFile(ctx, file, hash, path)
+	if err != nil {
+		log.G(ctx).Errorf("File not saved: %v", err)
+		respondError(w)
+		return
+	}
+	respondHash(w, hash, http.StatusCreated)
+}
+
+func genHash(ctx context.Context, f io.Reader) string {
+	hash := sha256.New()
+	_, err := io.Copy(hash, f)
+	if err != nil {
+		log.G(ctx).Fatalf("Failed to calculate SHA256 hash: %v", err)
+	}
+	return hex.EncodeToString(hash.Sum(nil))
+}
+
+func fileFromForm(r *http.Request) (multipart.File, error) {
 	err := r.ParseMultipartForm(10 * sizeutils.Megabyte)
 	if err != nil {
-		log.Printf("[%s] Could not parse form: %s\n", id, err)
-		w.WriteHeader(http.StatusUnprocessableEntity)
-		json.NewEncoder(w).Encode(errorResponse{"Could not parse form data"})
-		return
+		return nil, fmt.Errorf("failed to parse form data")
 	}
 
 	field, ok := r.MultipartForm.File["f"]
 	if !ok {
-		log.Errorf("[%s] Form field 'f' not found", id)
-		w.WriteHeader(http.StatusUnprocessableEntity)
-		json.NewEncoder(w).Encode(errorResponse{"Form field 'f' not found"})
-		return
+		return nil, fmt.Errorf("form field 'f' not found")
 	}
+
 	f, err := field[0].Open()
 	if err != nil {
-		log.Errorf("[%s] Could not open file from form: %s\n", id, err)
-		w.WriteHeader(http.StatusUnprocessableEntity)
-		json.NewEncoder(w).Encode(errorResponse{"Could not open file from form"})
-		return
+		return nil, fmt.Errorf("failed to open file from form")
 	}
-	defer f.Close()
 
-	hash := genHash(f)
-	dirs, err := initDirectories(hash, Config.StorageDir)
+	return f, nil
+}
+
+func saveFile(ctx context.Context, srcFile multipart.File, hash string, path string) error {
+	srcFile.Seek(0, 0)
+
+	dstFile, err := os.Create(path)
 	if err != nil {
-		log.Fatalf("[%s] Could not create directory storage tree %s\n", id, err)
-		w.WriteHeader(http.StatusInternalServerError)
-		return
+		return fmt.Errorf("failed to create file: %v", err)
 	}
+	defer dstFile.Close()
 
-	path := fmt.Sprintf("%s/%s", dirs, hash)
-	if fileExists(path) {
-		w.Header().Set("Content-Type", "application/json")
-		w.WriteHeader(http.StatusOK)
-		json.NewEncoder(w).Encode(okResponse{hash})
-		return
-	}
-
-	f.Seek(0, 0)
-
-	f1, err := os.Create(path)
+	_, err = io.Copy(dstFile, srcFile)
 	if err != nil {
-		log.Fatalf("[%s] Could not create file: %s\n", id, err)
-		w.WriteHeader(http.StatusInternalServerError)
-		return
+		return fmt.Errorf("failed to write file: %v", err)
 	}
-	defer f1.Close()
+	log.G(ctx).Infof("Saved file %q to disk", hash)
+	return nil
+}
 
-	written, err := io.Copy(f1, f)
-	if err != nil {
-		log.Fatalf("[%s] Could not write to file: %s\n", id, err)
-		w.WriteHeader(http.StatusInternalServerError)
-		return
-	}
-
-	log.Debugf("[%s] Written %d bytes to %s", id, written, path)
-	log.Infof("[%s] Saved file %s", id, hash)
-
+func respondHash(w http.ResponseWriter, hash string, statusCode int) {
 	w.Header().Set("Content-Type", "application/json")
-	w.WriteHeader(http.StatusCreated)
-	res := okResponse{hash}
-	json.NewEncoder(w).Encode(res)
+	w.WriteHeader(statusCode)
+	json.NewEncoder(w).Encode(okResponse{hash})
 }
 
-func fileExists(path string) bool {
-	_, err := os.Stat(path)
-	return err == nil
+func respondError(w http.ResponseWriter) {
+	w.WriteHeader(http.StatusInternalServerError)
 }
 
-func genHash(f io.Reader) string {
-	hash := sha256.New()
-	_, err := io.Copy(hash, f)
-	if err != nil {
-		log.Fatalf("Could not calculate SHA256 hash %s\n", err)
-	}
-	return hex.EncodeToString(hash.Sum(nil))
+func respondInvalid(w http.ResponseWriter, err error) {
+	w.WriteHeader(http.StatusUnprocessableEntity)
+	json.NewEncoder(w).Encode(errorResponse{fmt.Sprintf("%v", err)})
 }

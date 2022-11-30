@@ -6,7 +6,8 @@ import (
 	"time"
 
 	"github.com/google/uuid"
-	log "github.com/sirupsen/logrus"
+	"github.com/lorankloeze/hashcd/log"
+
 	"github.com/urfave/negroni"
 )
 
@@ -39,11 +40,15 @@ func RequestId(rw http.ResponseWriter, r *http.Request, next http.HandlerFunc) {
 
 func Log(rw http.ResponseWriter, r *http.Request, next http.HandlerFunc) {
 	tStart := time.Now()
-	id := r.Context().Value(ContextRequestIdKey)
 
-	log.Infof("[%s] Request start| %s | %s | %s", id, clientIp(r), r.Method, r.URL.Path)
+	id := r.Context().Value(ContextRequestIdKey)
+	ctx := log.WithLogger(r.Context(), log.L.WithField("reqid", id))
+
+	log.G(ctx).Infof("Request from %s [%s] %s", clientIp(r), r.Method, r.URL.Path)
+
 	lrw := negroni.NewResponseWriter(rw)
 	next(lrw, r)
 	dur := time.Since(tStart)
-	log.Infof("[%s] Request finished | %d | %s", id, lrw.Status(), dur)
+
+	log.G(ctx).Infof("Request finished <%d - %s> in %s", lrw.Status(), http.StatusText(lrw.Status()), dur)
 }

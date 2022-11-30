@@ -3,14 +3,19 @@ package files
 import (
 	"os"
 
-	log "github.com/sirupsen/logrus"
+	"github.com/lorankloeze/hashcd/log"
 )
 
 func FileSize(path string) (int64, error) {
 	fi, err := os.Stat(path)
 	if err != nil {
-		log.Errorf("Could not stat file '%s': %s", path, err)
+		log.L.Errorf("Could not stat file %q: %s", path, err)
 		return 0, err
 	}
 	return fi.Size(), nil
+}
+
+func FileExists(path string) bool {
+	_, err := os.Stat(path)
+	return err == nil
 }

@@ -10,13 +10,15 @@ import (
 
 	"github.com/julienschmidt/httprouter"
 	"github.com/lorankloeze/hashcd/cache"
+	"github.com/lorankloeze/hashcd/files"
+	"github.com/lorankloeze/hashcd/log"
 	"github.com/lorankloeze/hashcd/middleware"
-	log "github.com/sirupsen/logrus"
 )
 
 func Download(w http.ResponseWriter, r *http.Request, _ httprouter.Params) {
 	validateConfig()
 	id := r.Context().Value(middleware.ContextRequestIdKey)
+	ctx := log.WithLogger(r.Context(), log.L.WithField("reqid", id))
 
 	hash, err := extractHash(r.RequestURI)
 	if err != nil {
@@ -24,28 +26,25 @@ func Download(w http.ResponseWriter, r *http.Request, _ httprouter.Params) {
 		return
 	}
 
-	fmt.Printf("La: %q\n", hash)
-	log.Infof("[%s] Sending file '%s'", id, hash)
+	log.G(ctx).Infof("Sending file %q", hash)
 
 	path := filepath.Join(directoryTree(hash), hash)
-	if !fileExists(path) {
+	if !files.FileExists(path) {
 		w.WriteHeader(http.StatusNotFound)
 		return
 	}
 
 	reader, ok := cache.Retrieve(hash)
 	if ok {
-		log.Infof("[%s] Serving from cache", id)
+		log.G(ctx).Infof("Serving from cache %q", hash)
 		w.Header().Set("X-Served-From", "cache on server")
 		http.ServeContent(w, r, hash, time.Time{}, reader)
 	} else {
-		log.Infof("[%s] Serving from disk", id)
+		log.G(ctx).Infof("Serving from disk %q", hash)
 		w.Header().Set("X-Served-From", "disk on server")
 		cache.Insert(hash, path)
 		http.ServeFile(w, r, path) // ServeFile sanitizes the path to prevent traversal attacks
 	}
-
-	log.Infof("[%s] Sending finished", id)
 }
 
 func extractHash(hashish string) (string, error) {
