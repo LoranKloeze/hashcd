@@ -76,7 +76,7 @@ func genHash(ctx context.Context, f io.Reader) string {
 }
 
 func fileFromForm(r *http.Request) (multipart.File, error) {
-	err := r.ParseMultipartForm(10 * sizeutils.Megabyte)
+	err := r.ParseMultipartForm(10 * sizeutils.MiB)
 	if err != nil {
 		return nil, fmt.Errorf("failed to parse form data")
 	}

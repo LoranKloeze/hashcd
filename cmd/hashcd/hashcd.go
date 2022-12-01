@@ -1,9 +1,9 @@
 package main
 
 import (
-	"net/http"
 	"os"
 
+	"net/http"
 	_ "net/http/pprof"
 
 	"github.com/dgraph-io/ristretto"
@@ -26,7 +26,7 @@ func main() {
 
 	err := godotenv.Load()
 	if err != nil {
-		log.L.Info("No .env file found, that's fine: using regular environment")
+		log.L.Info("No .env file found, that's fine: using OS environment")
 	}
 
 	err = config.Load()
@@ -51,7 +51,9 @@ func main() {
 	n.UseHandler(router)
 
 	log.L.Infof("PID: %d\n", os.Getpid())
-	log.L.Info("Listening on port 8080")
+	log.L.Infof("Log level: %s", config.C.LogLevel)
+	log.L.Infof("Listening: %s", config.C.ListenAddr)
+	printConfig()
 	log.L.Fatal(http.ListenAndServe(":8080", n))
 }
 
@@ -63,4 +65,10 @@ func initCache(cacheSize, maxCacheItemSize int64) *ristretto.Cache {
 	}
 
 	return c
+}
+
+func printConfig() {
+	log.L.Debugf("Storage directory: %s", config.C.StorageDir)
+	log.L.Debugf("Cache size: %d MiB", config.C.CacheSize)
+	log.L.Debugf("Cache item size: %d MiB", config.C.CacheItemSize)
 }

@@ -19,6 +19,7 @@ func TestDefaultConfig(t *testing.T) {
 		{name: "CacheItemSize", values: []interface{}{C.CacheItemSize, int64(2)}},
 		{name: "LogLevel", values: []interface{}{C.LogLevel, logrus.InfoLevel}},
 		{name: "StorageDir", values: []interface{}{C.StorageDir, ""}},
+		{name: "ListenAddr", values: []interface{}{C.ListenAddr, "127.0.0.1:8080"}},
 	}
 
 	for _, test := range tests {
@@ -32,7 +33,6 @@ func TestDefaultConfig(t *testing.T) {
 func TestMissingStorageDir(t *testing.T) {
 
 	err := Load()
-
 	if err == nil { // yes, this is err == nil
 		t.Errorf("Expected error, got nil")
 	}

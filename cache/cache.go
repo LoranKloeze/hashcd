@@ -19,14 +19,14 @@ var c *ristretto.Cache
 var maxCacheItemSize int64
 
 // Init initializes the cache and returns the cache. The cache size sets the cache
-// capacity in megabytes. The item size sets the maximum size per item in megabytes.
+// capacity in MiB. The item size sets the maximum size per item in MiB.
 func Init(cacheSize int64, itemSize int64) (*ristretto.Cache, error) {
-	maxCacheItemSize = itemSize * sizeutils.Megabyte
+	maxCacheItemSize = itemSize * sizeutils.MiB
 	var err error
 
 	c, err = ristretto.NewCache(&ristretto.Config{
 		NumCounters: 1e7,
-		MaxCost:     cacheSize * sizeutils.Megabyte,
+		MaxCost:     cacheSize * sizeutils.MiB,
 		BufferItems: 64,
 		OnEvict:     onEvict,
 		Metrics:     false,
