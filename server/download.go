@@ -10,13 +10,13 @@ import (
 
 	"github.com/julienschmidt/httprouter"
 	"github.com/lorankloeze/hashcd/cache"
+	"github.com/lorankloeze/hashcd/config"
 	"github.com/lorankloeze/hashcd/files"
 	"github.com/lorankloeze/hashcd/log"
 	"github.com/lorankloeze/hashcd/middleware"
 )
 
 func Download(w http.ResponseWriter, r *http.Request, _ httprouter.Params) {
-	validateConfig()
 	id := r.Context().Value(middleware.ContextRequestIdKey)
 	ctx := log.WithLogger(r.Context(), log.L.WithField("reqid", id))
 
@@ -28,7 +28,7 @@ func Download(w http.ResponseWriter, r *http.Request, _ httprouter.Params) {
 
 	log.G(ctx).Infof("Sending file %q", hash)
 
-	path := filepath.Join(directoryTree(hash), hash)
+	path := filepath.Join(directoryTree(config.C.StorageDir, hash), hash)
 	if !files.FileExists(path) {
 		w.WriteHeader(http.StatusNotFound)
 		return
@@ -56,11 +56,11 @@ func extractHash(hashish string) (string, error) {
 	return re.FindString(hashish), nil
 }
 
-func directoryTree(hash string) string {
+func directoryTree(storageDir string, hash string) string {
 	t := hash[0 : len(hash)-2]
 
 	re := regexp.MustCompile(`..`)
-	p := Config.StorageDir + "/"
+	p := storageDir + "/"
 	r := re.FindAllString(t, -1)
 	return p + strings.Join(r, "/")
 }

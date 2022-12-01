@@ -13,6 +13,7 @@ import (
 	"path/filepath"
 
 	"github.com/julienschmidt/httprouter"
+	"github.com/lorankloeze/hashcd/config"
 	"github.com/lorankloeze/hashcd/files"
 	"github.com/lorankloeze/hashcd/log"
 	"github.com/lorankloeze/hashcd/middleware"
@@ -29,7 +30,6 @@ type errorResponse struct {
 }
 
 func Upload(w http.ResponseWriter, r *http.Request, _ httprouter.Params) {
-	validateConfig()
 	id := r.Context().Value(middleware.ContextRequestIdKey)
 	ctx := log.WithLogger(r.Context(), log.L.WithField("reqid", id))
 
@@ -44,7 +44,7 @@ func Upload(w http.ResponseWriter, r *http.Request, _ httprouter.Params) {
 	defer file.Close()
 
 	hash := genHash(ctx, file)
-	dirs, err := initDirectories(hash, Config.StorageDir)
+	dirs, err := initDirectories(hash, config.C.StorageDir)
 	if err != nil {
 		log.G(ctx).Errorf("Directory storage tree not created: %v", err)
 		respondError(w)

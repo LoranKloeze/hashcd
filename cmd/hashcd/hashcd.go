@@ -3,7 +3,6 @@ package main
 import (
 	"net/http"
 	"os"
-	"strconv"
 
 	_ "net/http/pprof"
 
@@ -11,6 +10,7 @@ import (
 	"github.com/joho/godotenv"
 	"github.com/julienschmidt/httprouter"
 	"github.com/lorankloeze/hashcd/cache"
+	"github.com/lorankloeze/hashcd/config"
 	"github.com/lorankloeze/hashcd/log"
 	"github.com/lorankloeze/hashcd/middleware"
 	"github.com/lorankloeze/hashcd/server"
@@ -19,25 +19,24 @@ import (
 	"github.com/urfave/negroni"
 )
 
-const envCacheSize = "HASHCD_CACHE_SIZE"
-const envCacheItemSize = "HASHCD_CACHE_ITEM_SIZE"
-
 func main() {
 	logrus.SetFormatter(&logrus.TextFormatter{
 		FullTimestamp: true,
 	})
-	logrus.SetLevel(logrus.DebugLevel)
 
 	err := godotenv.Load()
 	if err != nil {
 		log.L.Info("No .env file found, that's fine: using regular environment")
 	}
 
-	server.Config = server.Configuration{
-		StorageDir: os.Getenv("HASHCD_STORAGE"),
+	err = config.Load()
+	if err != nil {
+		log.L.Fatalf("Could not load configuration: %v", err)
 	}
 
-	c := initCache()
+	logrus.SetLevel(config.C.LogLevel)
+
+	c := initCache(config.C.CacheSize, config.C.CacheItemSize)
 	defer c.Close()
 
 	router := httprouter.New()
@@ -56,17 +55,7 @@ func main() {
 	log.L.Fatal(http.ListenAndServe(":8080", n))
 }
 
-func initCache() *ristretto.Cache {
-
-	cacheSize, err := strconv.ParseInt(os.Getenv(envCacheSize), 10, 64)
-	if err != nil {
-		log.L.Fatalf("envCacheSize: %q is not a number", envCacheSize)
-	}
-
-	maxCacheItemSize, err := strconv.ParseInt(os.Getenv(envCacheItemSize), 10, 64)
-	if err != nil {
-		log.L.Fatalf("envCacheItemSize: %q is not a number", envCacheItemSize)
-	}
+func initCache(cacheSize, maxCacheItemSize int64) *ristretto.Cache {
 
 	c, err := cache.Init(cacheSize, maxCacheItemSize)
 	if err != nil {

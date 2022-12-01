@@ -8,6 +8,8 @@ import (
 	"os"
 	"path/filepath"
 	"testing"
+
+	"github.com/lorankloeze/hashcd/config"
 )
 
 func createDummyHash(t *testing.T, data []byte) string {
@@ -15,7 +17,7 @@ func createDummyHash(t *testing.T, data []byte) string {
 	io.Copy(hashData, bytes.NewBuffer(data))
 	hashHex := hex.EncodeToString(hashData.Sum(nil))
 
-	dir, err := initDirectories(hashHex, Config.StorageDir)
+	dir, err := initDirectories(hashHex, config.C.StorageDir)
 	if err != nil {
 		t.Errorf("unexpected error: %v", err)
 	}

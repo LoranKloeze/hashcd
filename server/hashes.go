@@ -7,6 +7,7 @@ import (
 	"path/filepath"
 
 	"github.com/julienschmidt/httprouter"
+	"github.com/lorankloeze/hashcd/config"
 	"github.com/lorankloeze/hashcd/files"
 	"github.com/lorankloeze/hashcd/log"
 	"github.com/lorankloeze/hashcd/middleware"
@@ -18,7 +19,6 @@ type fileStat struct {
 }
 
 func HashList(w http.ResponseWriter, r *http.Request, p httprouter.Params) {
-	validateConfig()
 	id := r.Context().Value(middleware.ContextRequestIdKey)
 	ctx := log.WithLogger(r.Context(), log.L.WithField("reqid", id))
 
@@ -28,7 +28,7 @@ func HashList(w http.ResponseWriter, r *http.Request, p httprouter.Params) {
 
 	w.Header().Set("Content-Type", "application/json")
 
-	filepath.WalkDir(Config.StorageDir, func(path string, d fs.DirEntry, err error) error {
+	filepath.WalkDir(config.C.StorageDir, func(path string, d fs.DirEntry, err error) error {
 		if err != nil {
 			log.G(ctx).Fatalf("Failed to walk directory: %v", err)
 		}

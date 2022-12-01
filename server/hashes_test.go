@@ -6,11 +6,13 @@ import (
 	"net/http/httptest"
 	"os"
 	"testing"
+
+	"github.com/lorankloeze/hashcd/config"
 )
 
 func TestHashList(t *testing.T) {
-	Config.StorageDir = tempStorageDir(t)
-	defer os.RemoveAll(Config.StorageDir)
+	config.C.StorageDir = tempStorageDir(t)
+	defer os.RemoveAll(config.C.StorageDir)
 
 	createDummyHash(t, []byte{'a', 'b', 'c'})
 	createDummyHash(t, []byte{'t', 'e', 's', 't'})

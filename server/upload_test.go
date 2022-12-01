@@ -14,11 +14,12 @@ import (
 	"testing"
 
 	"github.com/google/go-cmp/cmp"
+	"github.com/lorankloeze/hashcd/config"
 )
 
 func TestUpload(t *testing.T) {
-	Config.StorageDir = tempStorageDir(t)
-	defer os.RemoveAll(Config.StorageDir)
+	config.C.StorageDir = tempStorageDir(t)
+	defer os.RemoveAll(config.C.StorageDir)
 
 	w := httptest.NewRecorder()
 	r, expHash := makeUploadRequest(t, []byte{'a', 'b', 'c'})
@@ -29,7 +30,7 @@ func TestUpload(t *testing.T) {
 	// If hash is abcdef1011, directory is storage/ab/cd/ef/10 (thus without the last 2 characters)
 	re := regexp.MustCompile(`..`)
 	d := re.FindAllString(expHash, -1)
-	dir := filepath.Join(Config.StorageDir, filepath.Join(d[0:len(d)-1]...), expHash)
+	dir := filepath.Join(config.C.StorageDir, filepath.Join(d[0:len(d)-1]...), expHash)
 
 	f, err := os.Open(dir)
 	if err != nil {

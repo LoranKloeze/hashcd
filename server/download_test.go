@@ -11,11 +11,12 @@ import (
 
 	"github.com/google/go-cmp/cmp"
 	"github.com/lorankloeze/hashcd/cache"
+	"github.com/lorankloeze/hashcd/config"
 )
 
 func TestDownload(t *testing.T) {
-	Config.StorageDir = tempStorageDir(t)
-	defer os.RemoveAll(Config.StorageDir)
+	config.C.StorageDir = tempStorageDir(t)
+	defer os.RemoveAll(config.C.StorageDir)
 
 	exp := []byte{'g', 'o', 'g', 'o', 'g', 'o'}
 	h := createDummyHash(t, exp)
@@ -34,8 +35,8 @@ func TestDownload(t *testing.T) {
 }
 
 func TestDownloadNonExisting(t *testing.T) {
-	Config.StorageDir = tempStorageDir(t)
-	defer os.RemoveAll(Config.StorageDir)
+	config.C.StorageDir = tempStorageDir(t)
+	defer os.RemoveAll(config.C.StorageDir)
 
 	r := httptest.NewRequest("GET", "/d/idonotexist", nil)
 	defer r.Body.Close()
@@ -49,8 +50,8 @@ func TestDownloadNonExisting(t *testing.T) {
 }
 
 func TestDownloadCachedFile(t *testing.T) {
-	Config.StorageDir = tempStorageDir(t)
-	defer os.RemoveAll(Config.StorageDir)
+	config.C.StorageDir = tempStorageDir(t)
+	defer os.RemoveAll(config.C.StorageDir)
 	c, _ := cache.Init(1, 1)
 	defer c.Close()
 
@@ -83,8 +84,8 @@ func TestDownloadCachedFile(t *testing.T) {
 }
 
 func TestDownloadUncachedFile(t *testing.T) {
-	Config.StorageDir = tempStorageDir(t)
-	defer os.RemoveAll(Config.StorageDir)
+	config.C.StorageDir = tempStorageDir(t)
+	defer os.RemoveAll(config.C.StorageDir)
 	c, _ := cache.Init(1, 1)
 	defer c.Close()
 
