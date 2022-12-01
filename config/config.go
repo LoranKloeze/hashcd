@@ -85,6 +85,8 @@ func Load() error {
 	}
 
 	// LogLevel
+	lala, ok := os.LookupEnv(envLogLevel)
+	fmt.Println(lala, ok)
 	if v, ok := os.LookupEnv(envLogLevel); ok {
 		lvl, err := logrus.ParseLevel(v)
 		if err != nil {
