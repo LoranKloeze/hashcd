@@ -10,7 +10,7 @@ Replace URI scheme, localhost, port if needed. Localhost is used to simplify dev
 Create a new file if it doesn't exist yet
 #### Request
 ```shell
-curl --location --request POST 'http://localhost:8080/' --form 'f=@"/tmp/my_file"
+curl --location --request POST 'http://localhost:8080/u' --form 'f=@"/tmp/my_file"
 ```
 #### Response
 _If the file didn't exist yet_  
